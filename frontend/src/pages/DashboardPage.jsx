@@ -78,7 +78,6 @@ const DashboardPage = () => {
                 <h1 className="text-4xl font-bold text-gray-800 mb-2">Your Dashboard</h1>
                 <p className="text-lg text-gray-500 mb-8">Manage all your carpooling activity in one place.</p>
                 
-                {/* Tab Navigation */}
                 <div className="flex border-b border-gray-200 mb-8">
                     <button 
                         onClick={() => setActiveTab('driving')}

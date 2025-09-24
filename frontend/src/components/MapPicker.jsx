@@ -37,7 +37,7 @@ const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated }
     const MapEvents = () => {
         useMap({
             click: async (e) => {
-                if (!onLocationSelect) return; // Make click handler optional
+                if (!onLocationSelect) return; 
                 const { lat, lng } = e.latlng;
                  try {
                     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);

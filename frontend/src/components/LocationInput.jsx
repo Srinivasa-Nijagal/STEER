@@ -20,13 +20,13 @@ const LocationInput = ({ label, value, onLocationSelect }) => {
             );
             
             const options = (filteredData.length > 0 ? filteredData : data).map((item) => ({
-                value: item, // The entire suggestion object
-                label: item.display_name, // The text displayed in the dropdown
+                value: item, 
+                label: item.display_name, 
             }));
 
             return {
                 options: options,
-                hasMore: false, // We are not using pagination in this case
+                hasMore: false, 
             };
 
         } catch (error) {
@@ -49,7 +49,6 @@ const LocationInput = ({ label, value, onLocationSelect }) => {
         }
     };
     
-    // Custom styles to make the component blend with the app's design
     const customStyles = {
         control: (provided) => ({
             ...provided,
@@ -74,7 +73,7 @@ const LocationInput = ({ label, value, onLocationSelect }) => {
                 loadOptions={loadOptions}
                 onChange={handleChange}
                 placeholder="Search for an area or locality..."
-                debounceTimeout={600} // Built-in debounce
+                debounceTimeout={600} 
                 styles={customStyles}
             />
         </div>

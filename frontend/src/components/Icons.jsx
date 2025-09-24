@@ -16,7 +16,6 @@ export const SteeringWheel = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 15.5V22"/><path d="m16.9 14.2-.7-.7"/><path d="M7.8 9.1 7.1 8.4"/><path d="m20.2 10.5-.7-.7"/><path d="m4.5 14.2-.7-.7"/><path d="M12 8.5V2"/></svg>
 );
 
-// ... other icons like LogOut, MapPin, Money, Leaf, Community, etc. remain the same
 export const LogOut = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
 );

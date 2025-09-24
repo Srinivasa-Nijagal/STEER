@@ -157,7 +157,6 @@ const LoggedInHome = ({ setPage, user }) => {
      <div className="bg-slate-100 min-h-[calc(100vh-68px)] p-4 sm:p-8">
         <div className="container mx-auto max-w-7xl">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Content Column */}
                 <div className="lg:col-span-2">
                     <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Welcome back, {user.name}!</h1>
@@ -204,7 +203,6 @@ const LoggedInHome = ({ setPage, user }) => {
                     </div>
                 </div>
                 
-                {/* Right Sidebar */}
                 <div className="lg:col-span-1">
                     <div className="sticky top-24">
                         <div className="bg-white rounded-lg shadow-md p-6">

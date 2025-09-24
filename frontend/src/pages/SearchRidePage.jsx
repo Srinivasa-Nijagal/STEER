@@ -16,7 +16,6 @@ const SearchRidePage = ({ setPage }) => {
     const [detourInfo, setDetourInfo] = useState({ distance: null, loading: false });
     const OPENROUTESERVICE_API_KEY = process.env.REACT_APP_OPENROUTESERVICE_API_KEY;
 
-    // Effect to calculate detour when a ride is selected
     useEffect(() => {
         if (!selectedRide || !startPoint.lat || !endPoint.lat) {
             setDetourInfo({ distance: null, loading: false });
@@ -109,7 +108,6 @@ const SearchRidePage = ({ setPage }) => {
     return (
         <div className="min-h-[calc(100vh-68px)] flex flex-col">
             <div className="grid grid-cols-1 lg:grid-cols-12 flex-grow">
-                {/* Left Column: Search Form and Results */}
                 <div className="lg:col-span-4 xl:col-span-3 p-6 bg-white flex flex-col">
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">Find Your Ride</h1>
                     <div className="space-y-4 mb-4">

@@ -9,7 +9,6 @@ import SearchRidePage from './pages/SearchRidePage';
 import DashboardPage from './pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// This component will handle the actual page rendering
 const PageRenderer = ({ page, setPage }) => {
     switch (page) {
         case 'login':
