@@ -11,3 +11,4 @@ Ignore React production build folder
 
 Ignore system files
 .DS_Store
+.gitignore
