@@ -24,8 +24,6 @@ export const calculateFare = (distance) => {
     return Math.round(baseFare + (distance * ratePerKm));
 };
 
-
-// *** NEW FUNCTION FOR ADVANCED SEARCH ***
 // Calculates the shortest distance from a point to a line segment
 const pointToLineSegmentDistance = (point, lineStart, lineEnd) => {
     const A = point.lat - lineStart.lat;
@@ -55,7 +53,6 @@ const pointToLineSegmentDistance = (point, lineStart, lineEnd) => {
     return haversineDistance(point, { lat: xx, lon: yy });
 };
 
-// *** NEW FUNCTION FOR ADVANCED SEARCH ***
 // Finds the closest point on a route (a series of line segments) to a given point
 export const findClosestPointOnRoute = (point, routeCoordinates) => {
     let minDistance = Infinity;

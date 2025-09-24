@@ -1,4 +1,4 @@
-import './config.js'; // Import and run the config file first
+import './config.js'; 
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';

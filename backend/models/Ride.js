@@ -6,7 +6,6 @@ const pointSchema = new mongoose.Schema({
     lon: { type: Number, required: true },
 });
 
-// New schema to store the route path as GeoJSON LineString
 const routePathSchema = new mongoose.Schema({
     type: {
         type: String,
@@ -14,7 +13,7 @@ const routePathSchema = new mongoose.Schema({
         required: true
     },
     coordinates: {
-        type: [[Number]], // Array of [lon, lat] pairs
+        type: [[Number]], 
         required: true
     }
 });
@@ -29,7 +28,7 @@ const rideSchema = new mongoose.Schema({
     fare: { type: Number, required: true },
     riders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     routePath: { type: routePathSchema, required: true }, 
-    // **NEW:** Store the original route distance for detour calculation
+
     distance: { type: Number, required: true },
 }, { timestamps: true });
 

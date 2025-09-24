@@ -1,17 +1,14 @@
 import Ride from '../models/Ride.js';
 import User from '../models/User.js';
 import { haversineDistance, calculateFare, findClosestPointOnRoute } from '../utils/rideUtils.js';
-import fetch from 'node-fetch'; // Make sure to install node-fetch: npm install node-fetch
+import fetch from 'node-fetch'; 
 
 // Configurable thresholds for matching logic
 const MATCHING_THRESHOLD = 20; // Max distance a rider can be from the path (in km)
 const DETOUR_THRESHOLD = 3;   // Max extra distance the driver is willing to travel (in km)
 
-// IMPORTANT: Add your OpenRouteService API key here
 const OPENROUTESERVICE_API_KEY = process.env.OPENROUTESERVICE_API_KEY;
-// @desc    Add a new ride
-// @route   POST /api/rides/add
-// @access  Private
+
 export const addRide = async (req, res) => {
     const { origin, destination, departureTime, seats } = req.body;
     
@@ -50,7 +47,7 @@ export const addRide = async (req, res) => {
             availableSeats: seats,
             fare,
             routePath: routePath,
-            distance: distance, // Save original distance
+            distance: distance, 
         });
 
         await ride.save();
@@ -62,9 +59,6 @@ export const addRide = async (req, res) => {
     }
 };
 
-// @desc    Search for available rides with advanced detour check
-// @route   POST /api/rides/search
-// @access  Private
 export const searchRides = async (req, res) => {
     const { start, end } = req.body;
     const riderStartPoint = { lat: start.lat, lon: start.lon };
@@ -90,9 +84,8 @@ export const searchRides = async (req, res) => {
             const isDropoffCloseEnough = dropoff.distance <= MATCHING_THRESHOLD;
             const isOrderCorrect = dropoff.index > pickup.index;
 
-            // **STEP 1: Initial check**
             if (isPickupCloseEnough && isDropoffCloseEnough && isOrderCorrect) {
-                // **STEP 2: Advanced Detour Check**
+
                 const detourRouteCoords = [
                     [ride.origin.lon, ride.origin.lat],
                     [riderStartPoint.lon, riderStartPoint.lat],
@@ -132,9 +125,6 @@ export const searchRides = async (req, res) => {
 };
 
 
-// @desc    Book a seat on a ride
-// @route   POST /api/rides/book/:id
-// @access  Private
 export const bookRide = async (req, res) => {
     try {
         const ride = await Ride.findById(req.params.id);
@@ -162,9 +152,6 @@ export const bookRide = async (req, res) => {
     }
 };
 
-// @desc    Get rides for the logged-in user
-// @route   GET /api/rides/my-rides
-// @access  Private
 export const getUserRides = async (req, res) => {
     try {
         const driving = await Ride.find({ driver: req.user._id }).populate('riders', 'name');

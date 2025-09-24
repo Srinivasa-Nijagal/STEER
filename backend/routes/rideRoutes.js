@@ -4,7 +4,6 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// protect middleware ensures only logged-in users can access these routes
 router.post('/add', protect, addRide);
 router.post('/search', protect, searchRides);
 router.post('/book/:id', protect, bookRide);
