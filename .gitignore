@@ -1,0 +1,13 @@
+Ignore Node.js dependency folders
+/backend/node_modules
+/frontend/node_modules
+
+Ignore environment files containing secret API keys
+/backend/.env
+/frontend/.env
+
+Ignore React production build folder
+/frontend/build
+
+Ignore system files
+.DS_Store
