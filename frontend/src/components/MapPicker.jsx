@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, Polyline } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useAuth } from '../context/AuthContext';
 
 const startIcon = new Icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
@@ -13,6 +14,13 @@ const endIcon = new Icon({
     iconSize: [25, 41], iconAnchor: [12, 41], shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png', shadowSize: [41, 41],
 });
 
+const riderStartIcon = new Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png', shadowSize: [41, 41],
+});
+
+
+// Component to handle map view adjustments and resizing
 const MapController = ({ startPoint, endPoint }) => {
     const map = useMap();
     useEffect(() => {
@@ -23,21 +31,28 @@ const MapController = ({ startPoint, endPoint }) => {
         } else if (endPoint) {
             map.setView([endPoint.lat, endPoint.lon], 13);
         }
+
+        // **FIX:** Force the map to re-render its tiles after a short delay.
+        // This solves the "gray area" problem when the map's container changes size.
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+
     }, [startPoint, endPoint, map]);
     return null;
 };
 
-const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated }) => {
+const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated, pickupPath, riderStartPoint }) => {
     const [path, setPath] = useState([]);
     const [isRouting, setIsRouting] = useState(false);
     const [routingError, setRoutingError] = useState(null);
-    const OPENROUTESERVICE_API_KEY = process.env.REACT_APP_OPENROUTESERVICE_API_KEY;
     const debounceTimeout = useRef(null);
+    const { token } = useAuth();
 
     const MapEvents = () => {
         useMap({
             click: async (e) => {
-                if (!onLocationSelect) return; 
+                if (!onLocationSelect) return;
                 const { lat, lng } = e.latlng;
                  try {
                     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
@@ -57,9 +72,7 @@ const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated }
     };
 
     useEffect(() => {
-        if (debounceTimeout.current) {
-            clearTimeout(debounceTimeout.current);
-        }
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
         if (startPoint && endPoint) {
             setIsRouting(true);
@@ -69,26 +82,26 @@ const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated }
             debounceTimeout.current = setTimeout(() => {
                 const fetchRoute = async () => {
                     try {
-                        const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
+                        const response = await fetch('http://localhost:5000/api/proxy/route', {
                             method: 'POST',
                             headers: {
-                                'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
                                 'Content-Type': 'application/json',
-                                'Authorization': OPENROUTESERVICE_API_KEY
+                                'Authorization': `Bearer ${token}`
                             },
                             body: JSON.stringify({ "coordinates": [[startPoint.lon, startPoint.lat], [endPoint.lon, endPoint.lat]] })
                         });
 
-                        if (!response.ok) throw new Error('Failed to fetch route');
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error.message || 'Failed to fetch route');
+                        }
                         
                         const data = await response.json();
                         const route = data.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
                         const distance = data.features[0].properties.summary.distance / 1000;
                         
                         setPath(route);
-                        if (onRouteCalculated) {
-                            onRouteCalculated(distance);
-                        }
+                        if (onRouteCalculated) onRouteCalculated(distance);
 
                     } catch (err) {
                         console.error("Routing error:", err);
@@ -108,11 +121,9 @@ const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated }
         }
 
         return () => {
-            if (debounceTimeout.current) {
-                clearTimeout(debounceTimeout.current);
-            }
+            if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
         };
-    }, [startPoint, endPoint, onRouteCalculated]);
+    }, [startPoint, endPoint, onRouteCalculated, token]);
 
     return (
         <div className="relative h-full w-full">
@@ -123,7 +134,15 @@ const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated }
                 />
                 {startPoint && <Marker position={[startPoint.lat, startPoint.lon]} icon={startIcon} />}
                 {endPoint && <Marker position={[endPoint.lat, endPoint.lon]} icon={endIcon} />}
+                
+                {riderStartPoint && <Marker position={[riderStartPoint.lat, riderStartPoint.lon]} icon={riderStartIcon} />}
+                
                 {path.length > 0 && <Polyline positions={path} color="#0055ff" weight={5} />}
+                
+                {pickupPath && pickupPath.length > 0 && (
+                    <Polyline positions={pickupPath} color="#f97316" weight={5} dashArray="10, 10" />
+                )}
+                
                 <MapEvents />
                 <MapController startPoint={startPoint} endPoint={endPoint} />
             </MapContainer>
@@ -135,7 +154,7 @@ const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated }
             )}
             {routingError && (
                  <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1000] bg-red-500 text-white px-3 py-1 rounded-md shadow-lg text-sm font-medium">
-                    Error: Could not find a route.
+                    Error: {routingError}
                 </div>
             )}
         </div>

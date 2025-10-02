@@ -4,7 +4,7 @@ export const haversineDistance = (coords1, coords2) => {
         return x * Math.PI / 180;
     }
 
-    const R = 6371; // Earth's radius in km
+    const R = 6371; 
     const dLat = toRad(coords2.lat - coords1.lat);
     const dLon = toRad(coords2.lon - coords1.lon);
     const lat1 = toRad(coords1.lat);
@@ -18,9 +18,15 @@ export const haversineDistance = (coords1, coords2) => {
 };
 
 // Simple fare calculation
-export const calculateFare = (distance) => {
-    const baseFare = 50; // Base fare in INR
-    const ratePerKm = 8; // Rate per km in INR
+export const calculateFare = (distance, vehicleType) => {
+    let baseFare = 50;
+    let ratePerKm = 8;
+
+    if (vehicleType === '2-Wheeler') {
+        baseFare = 25; // Cheaper base fare for bikes
+        ratePerKm = 5;   // Cheaper rate per km for bikes
+    }
+
     return Math.round(baseFare + (distance * ratePerKm));
 };
 

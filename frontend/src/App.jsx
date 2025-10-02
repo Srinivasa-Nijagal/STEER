@@ -8,6 +8,9 @@ import AddRidePage from './pages/AddRidePage';
 import SearchRidePage from './pages/SearchRidePage';
 import DashboardPage from './pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import VerificationPage from './pages/VerificationPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AllNotificationsPage from './pages/AllNotificationsPage';
 
 const PageRenderer = ({ page, setPage }) => {
     switch (page) {
@@ -21,6 +24,12 @@ const PageRenderer = ({ page, setPage }) => {
             return <ProtectedRoute setPage={setPage}><SearchRidePage setPage={setPage} /></ProtectedRoute>;
         case 'dashboard':
             return <ProtectedRoute setPage={setPage}><DashboardPage /></ProtectedRoute>;
+        case 'verification':
+            return <ProtectedRoute setPage={setPage}><VerificationPage /></ProtectedRoute>;
+        case 'admin-dashboard':
+            return <ProtectedRoute setPage={setPage} adminOnly={true}><AdminDashboardPage /></ProtectedRoute>;
+        case 'all-notifications':
+            return <ProtectedRoute setPage={setPage}><AllNotificationsPage /></ProtectedRoute>;
         case 'home':
         default:
             return <HomePage setPage={setPage} />;

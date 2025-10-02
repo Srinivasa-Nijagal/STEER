@@ -152,6 +152,25 @@ const LoggedInHome = ({ setPage, user }) => {
         };
         fetchRideData();
     }, [token]);
+const handleOfferRideClick = () => {
+    if (user) {
+        // **FIX:** The check must be against user.verificationStatus === 'verified'
+        switch (user.verificationStatus) {
+            case 'verified':
+                setPage('add-ride');
+                break;
+            case 'pending':
+                alert("Your verification request is currently under review. We'll notify you once it's approved.");
+                break;
+            case 'unverified':
+            default:
+                alert("You must be a verified driver to offer a ride. You will now be redirected to the verification page.");
+                setPage('verification');
+                break;
+        }
+    }
+};
+    
 
     return (
      <div className="bg-slate-100 min-h-[calc(100vh-68px)] p-4 sm:p-8">
@@ -191,7 +210,7 @@ const LoggedInHome = ({ setPage, user }) => {
                                 <MapPin className="w-12 h-12 text-blue-500 mx-auto mb-3" />
                                 <h3 className="text-xl font-semibold text-gray-800">Find a Ride</h3>
                             </div>
-                            <div onClick={() => setPage('add-ride')} className="bg-white rounded-lg shadow p-6 text-center cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-transform duration-300">
+                            <div onClick={handleOfferRideClick} className="bg-white rounded-lg shadow p-6 text-center cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-transform duration-300">
                                 <PlusCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
                                 <h3 className="text-xl font-semibold text-gray-800">Offer a New Ride</h3>
                             </div>

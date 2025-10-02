@@ -4,6 +4,10 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
 import rideRoutes from './routes/rideRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import proxyRoutes from './routes/proxyRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 
@@ -23,6 +27,10 @@ connectDB();
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rides', rideRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/proxy', proxyRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

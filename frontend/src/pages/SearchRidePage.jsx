@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import LocationInput from '../components/LocationInput';
 import MapPicker from '../components/MapPicker';
-import { SearchX, Route, GitCommitVertical } from '../components/Icons';
+import { User, SearchX, Route, GitCommitVertical, Car, Motorcycle, CornerRightUp } from '../components/Icons';
 
 const SearchRidePage = ({ setPage }) => {
     const [startPoint, setStartPoint] = useState({ address: '', lat: null, lon: null });
@@ -14,16 +14,20 @@ const SearchRidePage = ({ setPage }) => {
     const [selectedRide, setSelectedRide] = useState(null);
     const [searchDistance, setSearchDistance] = useState(0);
     const [detourInfo, setDetourInfo] = useState({ distance: null, loading: false });
-    const OPENROUTESERVICE_API_KEY = process.env.REACT_APP_OPENROUTESERVICE_API_KEY;
+    const [pickupInfo, setPickupInfo] = useState({ path: [], distance: null, loading: false });
+    const [vehicleFilter, setVehicleFilter] = useState('All');
 
     useEffect(() => {
         if (!selectedRide || !startPoint.lat || !endPoint.lat) {
             setDetourInfo({ distance: null, loading: false });
+            setPickupInfo({ path: [], distance: null, loading: false });
             return;
         }
 
-        const calculateDetour = async () => {
+        const calculateDetails = async () => {
             setDetourInfo({ distance: null, loading: true });
+            setPickupInfo({ path: [], distance: null, loading: true });
+
             try {
                 const detourRouteCoords = [
                     [selectedRide.origin.lon, selectedRide.origin.lat],
@@ -31,34 +35,52 @@ const SearchRidePage = ({ setPage }) => {
                     [endPoint.lon, endPoint.lat],
                     [selectedRide.destination.lon, selectedRide.destination.lat]
                 ];
-
-                const response = await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
+                const detourPromise = fetch('http://localhost:5000/api/proxy/route', {
                     method: 'POST',
-                    headers: {
-                        'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-                        'Content-Type': 'application/json',
-                        'Authorization': OPENROUTESERVICE_API_KEY
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ "coordinates": detourRouteCoords })
                 });
 
-                if (response.ok) {
-                    const routeData = await response.json();
+                const pickupRouteCoords = [
+                    [selectedRide.origin.lon, selectedRide.origin.lat],
+                    [startPoint.lon, startPoint.lat]
+                ];
+                const pickupPromise = fetch('http://localhost:5000/api/proxy/route', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ "coordinates": pickupRouteCoords })
+                });
+
+                const [detourResponse, pickupResponse] = await Promise.all([detourPromise, pickupPromise]);
+
+                if (detourResponse.ok) {
+                    const routeData = await detourResponse.json();
                     const newDistance = routeData.features[0].properties.summary.distance / 1000;
                     const detourDistance = newDistance - selectedRide.distance;
                     setDetourInfo({ distance: detourDistance > 0 ? detourDistance : 0, loading: false });
                 } else {
                      setDetourInfo({ distance: null, loading: false });
                 }
+
+                if (pickupResponse.ok) {
+                    const routeData = await pickupResponse.json();
+                    const pickupPath = routeData.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                    const pickupDistance = routeData.features[0].properties.summary.distance / 1000;
+                    setPickupInfo({ path: pickupPath, distance: pickupDistance, loading: false });
+                } else {
+                     setPickupInfo({ path: [], distance: null, loading: false });
+                }
+
             } catch (error) {
-                console.error("Detour calculation error:", error);
+                console.error("Route calculation error:", error);
                 setDetourInfo({ distance: null, loading: false });
+                setPickupInfo({ path: [], distance: null, loading: false });
             }
         };
 
-        calculateDetour();
+        calculateDetails();
 
-    }, [selectedRide, startPoint, endPoint]);
+    }, [selectedRide, startPoint, endPoint, token]);
     
     const handleSearch = async () => {
         if (!startPoint.lat || !endPoint.lat) {
@@ -73,14 +95,21 @@ const SearchRidePage = ({ setPage }) => {
             const res = await fetch(`http://localhost:5000/api/rides/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
-                body: JSON.stringify({ start: startPoint, end: endPoint }),
+                body: JSON.stringify({ 
+                    start: startPoint, 
+                    end: endPoint,
+                    vehicleType: vehicleFilter
+                }),
             });
             const data = await res.json();
-            if (res.ok) setRides(data);
-            else throw new Error(data.message);
+            if (res.ok) {
+                setRides(data);
+            } else {
+                throw new Error(data.message || 'An unknown error occurred.');
+            }
         } catch (error) {
             console.error(error);
-            alert('Failed to search for rides.');
+            alert(`Failed to search for rides: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -108,20 +137,25 @@ const SearchRidePage = ({ setPage }) => {
     return (
         <div className="min-h-[calc(100vh-68px)] flex flex-col">
             <div className="grid grid-cols-1 lg:grid-cols-12 flex-grow">
+                {/* Left Column: Search Form and Results */}
                 <div className="lg:col-span-4 xl:col-span-3 p-6 bg-white flex flex-col">
                     <h1 className="text-2xl font-bold text-gray-800 mb-4">Find Your Ride</h1>
                     <div className="space-y-4 mb-4">
-                        <LocationInput 
-                            label="Starting Point" 
-                            value={startPoint.address} 
-                            onLocationSelect={setStartPoint} 
-                        />
-                        <LocationInput 
-                            label="Destination" 
-                            value={endPoint.address} 
-                            onLocationSelect={setEndPoint} 
-                        />
+                        <LocationInput label="Starting Point" value={startPoint.address} onLocationSelect={setStartPoint} />
+                        <LocationInput label="Destination" value={endPoint.address} onLocationSelect={setEndPoint} />
                     </div>
+                    
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Vehicle</label>
+                        <div className="flex space-x-2">
+                            {['All', 'Car', '2-Wheeler'].map(type => (
+                                <button key={type} onClick={() => setVehicleFilter(type)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-colors duration-200 ${vehicleFilter === type ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <button onClick={handleSearch} disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 disabled:bg-blue-300">
                         {loading ? 'Searching...' : 'Search Rides'}
                     </button>
@@ -133,7 +167,7 @@ const SearchRidePage = ({ setPage }) => {
                             <div className="text-center p-8">
                                 <SearchX className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                                 <h3 className="text-xl font-semibold text-gray-700">No Rides Found</h3>
-                                <p className="text-gray-500 mt-2">Try adjusting your locations or search radius.</p>
+                                <p className="text-gray-500 mt-2">Try adjusting your locations or search filter.</p>
                             </div>
                         )}
 
@@ -149,9 +183,12 @@ const SearchRidePage = ({ setPage }) => {
                                             <p className="font-bold text-lg text-gray-800">₹{ride.fare}</p>
                                             <p className="text-sm text-gray-500">{ride.distance.toFixed(1)} km</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-semibold text-gray-700">{ride.driver.name}</p>
-                                            <p className="text-xs text-gray-400">Driver</p>
+                                        <div className="text-right flex items-center">
+                                            <div className="mr-2">
+                                                <p className="font-semibold text-gray-700">{ride.driver.name}</p>
+                                                <p className="text-xs text-gray-400">{ride.vehicleNumber}</p>
+                                            </div>
+                                            {ride.vehicleType === 'Car' ? <Car className="w-6 h-6 text-blue-500" /> : <Motorcycle className="w-6 h-6 text-blue-500" />}
                                         </div>
                                     </div>
                                     <div className="mt-3 text-sm text-gray-600 space-y-1">
@@ -172,13 +209,16 @@ const SearchRidePage = ({ setPage }) => {
                 </div>
 
                 {/* Right Column: Map and Details */}
-                <div className="lg:col-span-8 xl:col-span-9 bg-gray-100 flex flex-col p-4 gap-4">
+                {/* **FIX:** Added a `relative z-0` to the map container to fix the layering issue. */}
+                <div className="relative z-0 lg:col-span-8 xl:col-span-9 bg-gray-100 flex flex-col p-4 gap-4">
                     <div className="flex-grow rounded-lg overflow-hidden border-2 border-gray-200 shadow-md">
                          <MapPicker 
-                            onLocationSelect={() => {}} // Click handler is disabled on this map
+                            onLocationSelect={() => {}}
                             onRouteCalculated={setSearchDistance}
                             startPoint={selectedRide ? selectedRide.origin : (startPoint.lat ? startPoint : null)}
                             endPoint={selectedRide ? selectedRide.destination : (endPoint.lat ? endPoint : null)}
+                            pickupPath={pickupInfo.path}
+                            riderStartPoint={selectedRide ? startPoint : null}
                         />
                     </div>
                     <div className="bg-white rounded-lg shadow-md p-4 h-auto md:h-32">
@@ -186,7 +226,7 @@ const SearchRidePage = ({ setPage }) => {
                             {selectedRide ? `Details for ride with ${selectedRide.driver.name}` : 'Your Search Details'}
                          </h2>
                          {selectedRide ? (
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="flex items-center">
                                     <Route className="w-8 h-8 text-blue-500 mr-3 flex-shrink-0"/>
                                     <div>
@@ -195,9 +235,18 @@ const SearchRidePage = ({ setPage }) => {
                                     </div>
                                 </div>
                                 <div className="flex items-center">
+                                    <CornerRightUp className="w-8 h-8 text-green-500 mr-3 flex-shrink-0"/>
+                                    <div>
+                                        <p className="text-sm text-gray-500">Pickup Distance</p>
+                                        <p className="font-bold text-lg">
+                                            {pickupInfo.loading ? '...' : pickupInfo.distance !== null ? `~${pickupInfo.distance.toFixed(1)} km` : 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center">
                                     <GitCommitVertical className="w-8 h-8 text-orange-500 mr-3 flex-shrink-0"/>
                                     <div>
-                                        <p className="text-sm text-gray-500">Added Detour</p>
+                                        <p className="text-sm text-gray-500">Total Added Detour</p>
                                         <p className="font-bold text-lg">
                                             {detourInfo.loading ? '...' : detourInfo.distance !== null ? `${detourInfo.distance.toFixed(1)} km` : 'N/A'}
                                         </p>

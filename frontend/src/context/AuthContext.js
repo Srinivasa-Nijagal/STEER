@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 
-const API_URL = 'http://localhost:5000'; 
+const API_URL = 'http://localhost:5000'; // Your backend URL
 
 const AuthContext = createContext();
 
@@ -27,9 +27,17 @@ export const AuthProvider = ({ children }) => {
     });
     const data = await res.json();
     if (res.ok) {
-      setUser({ _id: data._id, name: data.name, email: data.email });
+      // Store all user details, including isVerified and isAdmin status
+      const userData = { 
+        _id: data._id, 
+        name: data.name, 
+        email: data.email, 
+        verificationStatus: data.verificationStatus,
+        isAdmin: data.isAdmin 
+      };
+      setUser(userData);
       setToken(data.token);
-      localStorage.setItem('steerUser', JSON.stringify({ _id: data._id, name: data.name, email: data.email }));
+      localStorage.setItem('steerUser', JSON.stringify(userData));
       localStorage.setItem('steerToken', data.token);
       return data;
     } else {
@@ -45,6 +53,7 @@ export const AuthProvider = ({ children }) => {
     });
     const data = await res.json();
     if (res.ok) {
+        // Automatically log the user in after successful registration
         await login(email, password);
         return data;
     } else {
@@ -61,9 +70,10 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, token, login, register, logout, loading, isAuthenticated: !!token }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+
