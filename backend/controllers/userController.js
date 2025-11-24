@@ -1,8 +1,5 @@
 import User from '../models/User.js';
 
-// @desc    Request driver verification
-// @route   POST /api/users/request-verification
-// @access  Private
 export const requestVerification = async (req, res) => {
     const { name, dlNumber, rcNumber } = req.body;
 
@@ -10,7 +7,7 @@ export const requestVerification = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
-            user.name = name; // Allow user to update their name during verification
+            user.name = name; 
             user.dlNumber = dlNumber;
             user.rcNumber = rcNumber;
             user.verificationStatus = 'pending';

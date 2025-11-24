@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import LocationInput from '../components/LocationInput';
 import MapPicker from '../components/MapPicker';
-import { User, SearchX, Route, GitCommitVertical, Car, Motorcycle, CornerRightUp } from '../components/Icons';
+import { SearchX, Route, GitCommitVertical, Car, Motorcycle, CornerRightUp } from '../components/Icons';
 
 const SearchRidePage = ({ setPage }) => {
     const [startPoint, setStartPoint] = useState({ address: '', lat: null, lon: null });
@@ -29,23 +29,25 @@ const SearchRidePage = ({ setPage }) => {
             setPickupInfo({ path: [], distance: null, loading: true });
 
             try {
+                // API call for the full detour route
                 const detourRouteCoords = [
                     [selectedRide.origin.lon, selectedRide.origin.lat],
                     [startPoint.lon, startPoint.lat],
                     [endPoint.lon, endPoint.lat],
                     [selectedRide.destination.lon, selectedRide.destination.lat]
                 ];
-                const detourPromise = fetch('http://localhost:5000/api/proxy/route', {
+                const detourPromise = fetch('https://steer-backend.onrender.com/api/proxy/route', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ "coordinates": detourRouteCoords })
                 });
 
+                // API call for just the pickup leg route
                 const pickupRouteCoords = [
                     [selectedRide.origin.lon, selectedRide.origin.lat],
                     [startPoint.lon, startPoint.lat]
                 ];
-                const pickupPromise = fetch('http://localhost:5000/api/proxy/route', {
+                const pickupPromise = fetch('https://steer-backend.onrender.com/api/proxy/route', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ "coordinates": pickupRouteCoords })
@@ -53,6 +55,7 @@ const SearchRidePage = ({ setPage }) => {
 
                 const [detourResponse, pickupResponse] = await Promise.all([detourPromise, pickupPromise]);
 
+                // Process detour response
                 if (detourResponse.ok) {
                     const routeData = await detourResponse.json();
                     const newDistance = routeData.features[0].properties.summary.distance / 1000;
@@ -62,6 +65,7 @@ const SearchRidePage = ({ setPage }) => {
                      setDetourInfo({ distance: null, loading: false });
                 }
 
+                // Process pickup response
                 if (pickupResponse.ok) {
                     const routeData = await pickupResponse.json();
                     const pickupPath = routeData.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
@@ -92,7 +96,7 @@ const SearchRidePage = ({ setPage }) => {
         setRides([]); 
         setSelectedRide(null);
         try {
-            const res = await fetch(`http://localhost:5000/api/rides/search`, {
+            const res = await fetch(`https://steer-backend.onrender.com/api/rides/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({ 
@@ -118,7 +122,7 @@ const SearchRidePage = ({ setPage }) => {
      const handleBookRide = async (rideId) => {
         if (!window.confirm("Are you sure you want to book this ride?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/rides/book/${rideId}`, {
+            const res = await fetch(`https://steer-backend.onrender.com/api/rides/book/${rideId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
             });
@@ -209,9 +213,9 @@ const SearchRidePage = ({ setPage }) => {
                 </div>
 
                 {/* Right Column: Map and Details */}
-                {/* **FIX:** Added a `relative z-0` to the map container to fix the layering issue. */}
-                <div className="relative z-0 lg:col-span-8 xl:col-span-9 bg-gray-100 flex flex-col p-4 gap-4">
-                    <div className="flex-grow rounded-lg overflow-hidden border-2 border-gray-200 shadow-md">
+                <div className="lg:col-span-8 xl:col-span-9 bg-gray-100 flex flex-col p-4 gap-4">
+                    {/* **FIX:** Added a fixed height for mobile and `lg:h-auto` for desktop */}
+                    <div className="h-96 lg:h-auto lg:flex-grow rounded-lg overflow-hidden border-2 border-gray-200 shadow-md">
                          <MapPicker 
                             onLocationSelect={() => {}}
                             onRouteCalculated={setSearchDistance}

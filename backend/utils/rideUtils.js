@@ -23,8 +23,8 @@ export const calculateFare = (distance, vehicleType) => {
     let ratePerKm = 8;
 
     if (vehicleType === '2-Wheeler') {
-        baseFare = 25; // Cheaper base fare for bikes
-        ratePerKm = 5;   // Cheaper rate per km for bikes
+        baseFare = 25;
+        ratePerKm = 5;  
     }
 
     return Math.round(baseFare + (distance * ratePerKm));

@@ -15,7 +15,7 @@ export const getRoute = async (req, res) => {
                 'Content-Type': 'application/json',
                 'Authorization': OPENROUTESERVICE_API_KEY
             },
-            body: JSON.stringify(req.body) // Forward the coordinates from the frontend
+            body: JSON.stringify(req.body) 
         });
 
         if (!response.ok) {

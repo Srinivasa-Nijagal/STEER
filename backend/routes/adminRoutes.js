@@ -11,7 +11,6 @@ import { admin } from '../middleware/adminMiddleware.js';
 
 const router = express.Router();
 
-// Routes for fetching user lists by status
 router.route('/pending-verifications').get(protect, admin, getPendingVerifications);
 router.route('/verified-users').get(protect, admin, getVerifiedUsers);
 router.route('/rejected-users').get(protect, admin, getRejectedUsers);

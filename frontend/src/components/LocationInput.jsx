@@ -1,5 +1,6 @@
 import React from 'react';
 import { AsyncPaginate } from 'react-select-async-paginate';
+import { Locate } from './Icons'; // Import the new icon from your Canvas file
 
 const LocationInput = ({ label, value, onLocationSelect }) => {
 
@@ -49,6 +50,37 @@ const LocationInput = ({ label, value, onLocationSelect }) => {
         }
     };
     
+    // Function to get the user's current location
+    const handleGetCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const { latitude, longitude } = position.coords;
+            try {
+                // Use reverse geocoding to get address from coordinates
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                const data = await res.json();
+                if (data && data.display_name) {
+                    onLocationSelect({
+                        lat: latitude,
+                        lon: longitude,
+                        address: data.display_name,
+                    });
+                } else {
+                    alert("Could not find an address for your location.");
+                }
+            } catch (error) {
+                console.error("Reverse geocoding error:", error);
+                alert("Failed to get an address for your location.");
+            }
+        }, () => {
+            alert("Unable to retrieve your location. Please ensure location services are enabled.");
+        });
+    };
+    
     const customStyles = {
         control: (provided) => ({
             ...provided,
@@ -68,14 +100,26 @@ const LocationInput = ({ label, value, onLocationSelect }) => {
     return (
         <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-            <AsyncPaginate
-                value={value ? { label: value, value: null } : null}
-                loadOptions={loadOptions}
-                onChange={handleChange}
-                placeholder="Search for an area or locality..."
-                debounceTimeout={600} 
-                styles={customStyles}
-            />
+            <div className="relative flex items-center space-x-2">
+                <div className="flex-grow">
+                    <AsyncPaginate
+                        value={value ? { label: value, value: null } : null}
+                        loadOptions={loadOptions}
+                        onChange={handleChange}
+                        placeholder="Search for an area or locality..."
+                        debounceTimeout={600} 
+                        styles={customStyles}
+                    />
+                </div>
+                <button
+                    type="button"
+                    onClick={handleGetCurrentLocation}
+                    className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors flex-shrink-0"
+                    title="Use my current location"
+                >
+                    <Locate className="w-5 h-5 text-gray-600" />
+                </button>
+            </div>
         </div>
     );
 };

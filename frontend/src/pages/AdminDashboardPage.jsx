@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 const AdminDashboardPage = () => {
     const { token } = useAuth();
-    const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'verified', 'rejected'
+    const [activeTab, setActiveTab] = useState('pending'); 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
@@ -26,7 +26,7 @@ const AdminDashboardPage = () => {
         }
 
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/${endpoint}`, {
+            const res = await fetch(`https://steer-backend.onrender.com/api/admin/${endpoint}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -53,14 +53,14 @@ const AdminDashboardPage = () => {
         const endpoint = action === 'approve' ? 'verify-user' : 'reject-user';
 
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/${endpoint}/${userId}`, {
+            const res = await fetch(`https://steer-backend.onrender.com/api/admin/${endpoint}/${userId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
             if (res.ok) {
                 setMessage(`User ${action}d successfully!`);
-                fetchUsers(activeTab); // Refresh the current list
+                fetchUsers(activeTab); 
             } else {
                 throw new Error(data.message);
             }

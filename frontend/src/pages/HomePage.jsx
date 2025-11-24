@@ -126,7 +126,7 @@ const LoggedInHome = ({ setPage, user }) => {
     useEffect(() => {
         const fetchRideData = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/rides/my-rides`, {
+                const res = await fetch(`https://steer-backend.onrender.com/api/rides/my-rides`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const data = await res.json();

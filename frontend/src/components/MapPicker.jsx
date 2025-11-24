@@ -19,8 +19,6 @@ const riderStartIcon = new Icon({
     iconSize: [25, 41], iconAnchor: [12, 41], shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png', shadowSize: [41, 41],
 });
 
-
-// Component to handle map view adjustments and resizing
 const MapController = ({ startPoint, endPoint }) => {
     const map = useMap();
     useEffect(() => {
@@ -31,9 +29,6 @@ const MapController = ({ startPoint, endPoint }) => {
         } else if (endPoint) {
             map.setView([endPoint.lat, endPoint.lon], 13);
         }
-
-        // **FIX:** Force the map to re-render its tiles after a short delay.
-        // This solves the "gray area" problem when the map's container changes size.
         setTimeout(() => {
             map.invalidateSize();
         }, 100);
@@ -82,7 +77,7 @@ const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated, 
             debounceTimeout.current = setTimeout(() => {
                 const fetchRoute = async () => {
                     try {
-                        const response = await fetch('http://localhost:5000/api/proxy/route', {
+                        const response = await fetch('https://steer-backend.onrender.com/api/proxy/route', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

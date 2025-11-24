@@ -1,7 +1,7 @@
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 
-// Fetches users with 'pending' status
+//  users with 'pending' status
 export const getPendingVerifications = async (req, res) => {
     try {
         const users = await User.find({ verificationStatus: 'pending' });
@@ -11,7 +11,7 @@ export const getPendingVerifications = async (req, res) => {
     }
 };
 
-// NEW: Fetches users with 'verified' status
+//  users with 'verified' status
 export const getVerifiedUsers = async (req, res) => {
     try {
         const users = await User.find({ verificationStatus: 'verified', isAdmin: false });
@@ -21,7 +21,7 @@ export const getVerifiedUsers = async (req, res) => {
     }
 };
 
-// NEW: Fetches users with 'rejected' status
+//  users with 'rejected' status
 export const getRejectedUsers = async (req, res) => {
     try {
         const users = await User.find({ verificationStatus: 'rejected' });
@@ -51,12 +51,12 @@ export const verifyUser = async (req, res) => {
     }
 };
 
-// UPDATED: Sets a user's status to 'rejected'
+//  Sets a user's status to 'rejected'
 export const rejectUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (user) {
-            user.verificationStatus = 'rejected'; // Update status
+            user.verificationStatus = 'rejected'; 
             await user.save();
             await Notification.create({
                 user: user._id,

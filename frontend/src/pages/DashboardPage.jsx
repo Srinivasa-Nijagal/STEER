@@ -6,13 +6,12 @@ const DashboardPage = () => {
     const { token } = useAuth();
     const [rides, setRides] = useState({ driving: [], riding: [] });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('driving'); // 'driving' or 'riding'
+    const [activeTab, setActiveTab] = useState('driving'); 
 
-    // Function to fetch rides, can be called to refresh data
     const fetchRides = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/rides/my-rides`, {
+            const res = await fetch(`https://steer-backend.onrender.com/api/rides/my-rides`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -34,13 +33,13 @@ const DashboardPage = () => {
         if (!window.confirm("Are you sure you want to cancel your booking for this ride?")) return;
         
         try {
-            const res = await fetch(`http://localhost:5000/api/rides/cancel-booking/${rideId}`, {
+            const res = await fetch(`https://steer-backend.onrender.com/api/rides/cancel-booking/${rideId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
                 alert('Booking cancelled successfully!');
-                fetchRides(); // Refresh the list
+                fetchRides(); 
             } else {
                 const data = await res.json();
                 throw new Error(data.message);
@@ -54,13 +53,13 @@ const DashboardPage = () => {
         if (!window.confirm("Are you sure you want to permanently cancel this ride for all passengers? This cannot be undone.")) return;
 
         try {
-             const res = await fetch(`http://localhost:5000/api/rides/cancel-ride/${rideId}`, {
+             const res = await fetch(`https://steer-backend.onrender.com/api/rides/cancel-ride/${rideId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
              if (res.ok) {
                 alert('Ride cancelled successfully!');
-                fetchRides(); // Refresh the list
+                fetchRides(); 
             } else {
                 const data = await res.json();
                 throw new Error(data.message);

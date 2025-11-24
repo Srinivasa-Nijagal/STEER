@@ -4,13 +4,11 @@ import Notification from '../models/Notification.js';
 import { calculateFare, findClosestPointOnRoute } from '../utils/rideUtils.js';
 import fetch from 'node-fetch';
 
-const MATCHING_THRESHOLD = 20; // in km
+const MATCHING_THRESHOLD = 20; 
 const OPENROUTESERVICE_API_KEY = process.env.OPENROUTESERVICE_API_KEY;
 
-// @desc    Add a new ride
 export const addRide = async (req, res) => {
     try {
-        // **FIX:** The verification check must be the first thing inside the 'try' block.
         const driver = await User.findById(req.user._id);
         if (driver.verificationStatus !== 'verified') {
             return res.status(403).json({ message: 'Forbidden: You must be a verified driver to offer a ride.' });
@@ -63,7 +61,6 @@ export const addRide = async (req, res) => {
     }
 };
 
-// @desc    Search for available rides
 export const searchRides = async (req, res) => {
     const { start, end, vehicleType } = req.body;
     const riderStartPoint = { lat: start.lat, lon: start.lon };
@@ -132,7 +129,6 @@ export const searchRides = async (req, res) => {
     }
 };
 
-// @desc    Book a seat on a ride
 export const bookRide = async (req, res) => {
     try {
         const ride = await Ride.findById(req.params.id);
@@ -160,7 +156,6 @@ export const bookRide = async (req, res) => {
     }
 };
 
-// @desc    Get rides for the logged-in user
 export const getUserRides = async (req, res) => {
     try {
         const driving = await Ride.find({ driver: req.user._id }).populate('riders', 'name');
@@ -171,7 +166,6 @@ export const getUserRides = async (req, res) => {
     }
 };
 
-// @desc    Allow a rider to cancel their booking
 export const cancelBooking = async (req, res) => {
     try {
         const ride = await Ride.findById(req.params.id).populate('driver', 'name');
@@ -200,7 +194,7 @@ export const cancelBooking = async (req, res) => {
     }
 };
 
-// @desc    Allow a driver to cancel their offered ride
+
 export const cancelRide = async (req, res) => {
     try {
         const ride = await Ride.findById(req.params.id).populate('driver', 'name');

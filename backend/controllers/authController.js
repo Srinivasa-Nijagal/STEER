@@ -26,7 +26,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// Inside the loginUser function in authController.js
 
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
@@ -37,7 +36,7 @@ export const loginUser = async (req, res) => {
     _id: user._id,
     name: user.name,
     email: user.email,
-    verificationStatus: user.verificationStatus, // <-- REPLACE isVerified with this
+    verificationStatus: user.verificationStatus, 
     isAdmin: user.isAdmin,
     token: generateToken(user._id),
 });

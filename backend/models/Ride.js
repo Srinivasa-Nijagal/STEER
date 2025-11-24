@@ -23,7 +23,6 @@ const rideSchema = new mongoose.Schema({
     routePath: { type: routePathSchema, required: true }, 
     distance: { type: Number, required: true },
     maxDetourDistance: { type: Number, required: true },
-    // **NEW FIELDS**
     vehicleType: { type: String, enum: ['Car', '2-Wheeler'], required: true },
     vehicleNumber: { type: String, required: true },
 }, { timestamps: true });
