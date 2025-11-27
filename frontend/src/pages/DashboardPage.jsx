@@ -1,17 +1,27 @@
-import{ React, useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { SteeringWheel, Users, MapPin, CalendarDays, User, Route, Trash2 } from '../components/Icons';
+import ChatWindow from '../components/ChatWindow';
+import { SteeringWheel, Users, MapPin, CalendarDays, User, Route, Trash2, MessageCircle, CalendarClock, Car, Motorcycle, Star, CheckCircle, CreditCard, CheckSquare, AlertTriangle } from '../components/Icons';
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const DashboardPage = () => {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const [rides, setRides] = useState({ driving: [], riding: [] });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('driving'); 
+    const [activeTab, setActiveTab] = useState('driving');
+    const [activeChatRide, setActiveChatRide] = useState(null);
+    
+    // Rating Modal State
+    const [ratingModalOpen, setRatingModalOpen] = useState(false);
+    const [ratingRideId, setRatingRideId] = useState(null);
+    const [ratingValue, setRatingValue] = useState(5);
+    const [ratingComment, setRatingComment] = useState('');
 
-    const fetchRides = async () => {
+    const fetchRides = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`https://steer-backend.onrender.com/api/rides/my-rides`, {
+            const res = await fetch(`${API_URL}/api/rides/my-rides`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -23,23 +33,23 @@ const DashboardPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchRides();
-    }, [token]);
+    }, [fetchRides]);
 
     const handleCancelBooking = async (rideId) => {
         if (!window.confirm("Are you sure you want to cancel your booking for this ride?")) return;
         
         try {
-            const res = await fetch(`https://steer-backend.onrender.com/api/rides/cancel-booking/${rideId}`, {
+            const res = await fetch(`${API_URL}/api/rides/cancel-booking/${rideId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
                 alert('Booking cancelled successfully!');
-                fetchRides(); 
+                fetchRides();
             } else {
                 const data = await res.json();
                 throw new Error(data.message);
@@ -53,13 +63,13 @@ const DashboardPage = () => {
         if (!window.confirm("Are you sure you want to permanently cancel this ride for all passengers? This cannot be undone.")) return;
 
         try {
-             const res = await fetch(`https://steer-backend.onrender.com/api/rides/cancel-ride/${rideId}`, {
+             const res = await fetch(`${API_URL}/api/rides/cancel-ride/${rideId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
              if (res.ok) {
                 alert('Ride cancelled successfully!');
-                fetchRides(); 
+                fetchRides();
             } else {
                 const data = await res.json();
                 throw new Error(data.message);
@@ -69,14 +79,207 @@ const DashboardPage = () => {
         }
     };
 
+    const handleEditTime = async (rideId, currentTime) => {
+        const newTimeInput = prompt("Enter new date and time (YYYY-MM-DDTHH:MM):", currentTime.substring(0, 16));
+        
+        if (newTimeInput) {
+            try {
+                const res = await fetch(`${API_URL}/api/rides/update-time/${rideId}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ newTime: newTimeInput })
+                });
+                
+                if (res.ok) {
+                    alert("Time updated successfully! Riders have been notified.");
+                    fetchRides();
+                } else {
+                    throw new Error("Failed to update time");
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+    };
+
+    // Handle Status Update (Picked Up / Dropped Off)
+    const handleUpdateStatus = async (rideId, riderId, newStatus) => {
+        try {
+            const res = await fetch(`${API_URL}/api/rides/rider-status`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ rideId, riderId, status: newStatus })
+            });
+            if (res.ok) {
+                alert(`Status updated to ${newStatus.replace('_', ' ')}`);
+                fetchRides();
+            }
+        } catch (error) {
+            console.error("Error updating status", error);
+        }
+    };
+
+    // Submit Rating
+    const submitRating = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/rides/rate-driver`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ rideId: ratingRideId, rating: ratingValue, comment: ratingComment })
+            });
+            if (res.ok) {
+                alert("Thank you for your feedback!");
+                setRatingModalOpen(false);
+            } else {
+                const d = await res.json();
+                alert(d.message);
+            }
+        } catch (error) {
+             console.error("Error submitting rating", error);
+        }
+    };
+
+    // Handle Reporting No-Show
+    const handleReportNoShow = async (rideId) => {
+        if (!window.confirm("Are you sure you want to report that the driver did not show up? This will penalize the driver.")) return;
+        
+        try {
+            const res = await fetch(`${API_URL}/api/rides/report-no-show`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ rideId })
+            });
+            
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message);
+                fetchRides(); // Refresh status
+            } else {
+                alert(`Error: ${data.message}`);
+            }
+        } catch (error) {
+            alert(`Failed to submit report: ${error.message}`);
+        }
+    };
+
+    // **NEW: Handle Payment (Rider side)**
+    const handlePayRide = async (rideId) => {
+        if (!window.confirm("Mark this ride as paid? Ensure you have paid the driver via Cash/UPI.")) return;
+        try {
+            const res = await fetch(`${API_URL}/api/rides/pay`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ rideId })
+            });
+            if (res.ok) {
+                alert("Payment marked as sent. Waiting for driver confirmation.");
+                fetchRides();
+            } else {
+                const d = await res.json();
+                alert(d.message);
+            }
+        } catch (error) {
+            alert("Error processing payment.");
+        }
+    };
+
+    // **NEW: Confirm Payment (Driver side)**
+    const handleConfirmPayment = async (rideId, riderId) => {
+        if (!window.confirm("Confirm that you have received payment from this rider?")) return;
+        try {
+            const res = await fetch(`${API_URL}/api/rides/confirm-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ rideId, riderId })
+            });
+            if (res.ok) {
+                alert("Payment confirmed.");
+                fetchRides();
+            } else {
+                const d = await res.json();
+                alert(d.message);
+            }
+        } catch (error) {
+            alert("Error confirming payment.");
+        }
+    };
+
+    const handleSOS = async (rideId) => {
+        const confirmed = window.confirm("🚨 ARE YOU SURE? 🚨\n\nThis will trigger an EMERGENCY ALERT to the driver, all passengers, and the system administrators.\n\nOnly use this in a real emergency.");
+        
+        if (confirmed) {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported. Sending SOS without precise location.");
+                sendSOSRequest(rideId, "Location unavailable");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const location = `${position.coords.latitude}, ${position.coords.longitude}`;
+                    sendSOSRequest(rideId, location);
+                },
+                (error) => {
+                    console.error("Location error:", error);
+                    sendSOSRequest(rideId, "Location permission denied");
+                }
+            );
+        }
+    };
+
+    const sendSOSRequest = async (rideId, location) => {
+        try {
+            const res = await fetch(`${API_URL}/api/rides/sos`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ rideId, location })
+            });
+            
+            if (res.ok) {
+                alert("SOS Alert Sent! Help has been notified.");
+            } else {
+                alert("Failed to send SOS alert.");
+            }
+        } catch (error) {
+            alert("Network error sending SOS.");
+        }
+    };
+
     const RideCard = ({ ride, isDriving }) => {
-        const isUpcoming = new Date(ride.departureTime) > new Date();
+        const rideDate = new Date(ride.departureTime);
+        const isUpcoming = rideDate > new Date();
+        const hasPassed = rideDate < new Date(); 
+        
+        // Find current user's status if they are a rider. Added safety check.
+        const myRiderEntry = !isDriving 
+            ? ride.riders.find(r => (r.user?._id === user._id || r.user === user._id))
+            : null;
+        
+        const myRiderStatus = myRiderEntry?.status;
+        const myPaymentStatus = myRiderEntry?.paymentStatus;
+        const displayFare = isDriving ? ride.fare : (myRiderEntry?.bookedFare || ride.fare);
+
         return (
             <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col">
                 <div className="p-5 border-b border-gray-200">
                     <div className="flex justify-between items-center">
                         <p className="text-sm font-semibold text-gray-500">
-                            {new Date(ride.departureTime).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            {rideDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </p>
                         <div className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${isUpcoming ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                             {isUpcoming ? 'Upcoming' : 'Completed'}
@@ -87,6 +290,16 @@ const DashboardPage = () => {
                     </h3>
                 </div>
                 <div className="p-5 text-sm text-gray-600 space-y-3">
+                    <div className="flex items-center justify-between">
+                         <div className="flex items-center">
+                             <p className="font-bold text-lg text-gray-800">₹{displayFare}</p>
+                             {!isDriving && myRiderEntry?.bookedFare && <span className="text-xs text-gray-500 ml-1">(Your Fare)</span>}
+                         </div>
+                         <div className="flex items-center text-gray-500 text-xs">
+                            {ride.vehicleType === 'Car' ? <Car className="w-4 h-4 mr-2" /> : <Motorcycle className="w-4 h-4 mr-2" />}
+                            <span>{ride.vehicleType}</span>
+                         </div>
+                    </div>
                     <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-3 text-gray-400" />
                         <span><strong>From:</strong> {ride.origin.address}</span>
@@ -97,35 +310,147 @@ const DashboardPage = () => {
                     </div>
                      <div className="flex items-center">
                         <CalendarDays className="w-4 h-4 mr-3 text-gray-400" />
-                        <span><strong>Time:</strong> {new Date(ride.departureTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span><strong>Time:</strong> {rideDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
+
+                     {/* Rider List for Drivers (With Status Actions) */}
+                     {isDriving && ride.riders.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <p className="font-semibold mb-2 text-gray-700">Passengers:</p>
+                            {ride.riders.map(riderObj => {
+                                if (!riderObj.user) return null;
+                                return (
+                                    <div key={riderObj.user._id || riderObj.user} className="flex flex-col mb-2 bg-gray-50 p-2 rounded border border-gray-100">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <span className="font-medium text-gray-800">{riderObj.user.name || 'Unknown User'}</span>
+                                                <span className={`ml-2 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${riderObj.status === 'picked_up' ? 'bg-blue-100 text-blue-700' : riderObj.status === 'dropped_off' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                                                    {riderObj.status.replace('_', ' ')}
+                                                </span>
+                                            </div>
+                                            <div className="flex space-x-1">
+                                                {riderObj.status === 'booked' && (
+                                                    <button onClick={() => handleUpdateStatus(ride._id, riderObj.user._id, 'picked_up')} title="Mark Picked Up" className="p-1 hover:bg-blue-100 rounded">
+                                                        <Car className="w-5 h-5 text-blue-500" />
+                                                    </button>
+                                                )}
+                                                {riderObj.status === 'picked_up' && (
+                                                    <button onClick={() => handleUpdateStatus(ride._id, riderObj.user._id, 'dropped_off')} title="Mark Dropped Off" className="p-1 hover:bg-green-100 rounded">
+                                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* **NEW: Driver Payment Confirmation** */}
+                                        <div className="mt-2 flex justify-between items-center text-xs border-t border-gray-200 pt-2">
+                                            <span className="text-gray-500">Fare: ₹{riderObj.bookedFare}</span>
+                                            {riderObj.paymentStatus === 'confirmed' ? (
+                                                <span className="text-green-600 font-bold flex items-center bg-green-50 px-2 py-0.5 rounded"><CheckSquare className="w-3 h-3 mr-1"/> Paid</span>
+                                            ) : riderObj.paymentStatus === 'paid' ? (
+                                                <button onClick={() => handleConfirmPayment(ride._id, riderObj.user._id)} className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 flex items-center">
+                                                    <CheckSquare className="w-3 h-3 mr-1" /> Confirm Pay
+                                                </button>
+                                            ) : (
+                                                <span className="text-gray-400 italic">Payment Pending</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                     )}
+
                      {isDriving ? (
                          <div className="flex items-center">
-                            <Users className="w-4 h-4 mr-3 text-gray-400" />
-                            <span><strong>Riders:</strong> {ride.riders.length > 0 ? ride.riders.map(r => r.name).join(', ') : 'None'}</span>
+                            <User className="w-4 h-4 mr-3 text-gray-400" />
+                            <span><strong>Driver:</strong> You</span>
                         </div>
                      ) : (
                          <div className="flex items-center">
                             <User className="w-4 h-4 mr-3 text-gray-400" />
-                            <span><strong>Driver:</strong> {ride.driver.name}</span>
+                            <span><strong>Driver:</strong> {ride.driver ? ride.driver.name : 'Unknown Driver'}</span>
                         </div>
                      )}
+                     
+                     <div className="flex items-center text-gray-500 text-xs pt-2 border-t border-gray-100 mt-2">
+                        <span className="font-mono bg-gray-100 px-1 rounded">Reg: {ride.vehicleNumber}</span>
+                     </div>
                 </div>
-                 {isUpcoming && (
-                    <div className="p-4 border-t border-gray-200 mt-auto">
-                        {isDriving ? (
-                            <button onClick={() => handleCancelRide(ride._id)} className="w-full flex items-center justify-center text-red-500 hover:text-red-700 font-semibold text-sm transition-colors duration-200">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Cancel This Ride
+
+                 {/* Actions Footer */}
+                 <div className="p-4 border-t border-gray-200 mt-auto flex flex-wrap gap-2">
+                    {/* Chat Button (Always visible for active rides) */}
+                    {isUpcoming && (
+                        <button 
+                            onClick={() => setActiveChatRide(ride)}
+                            className="flex-1 flex items-center justify-center bg-blue-100 text-blue-600 hover:bg-blue-200 py-2 rounded-lg font-semibold text-sm transition-colors"
+                        >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Chat
+                        </button>
+                    )}
+                    
+                    {/* **NEW: Rider Payment Button** */}
+                    {!isDriving && (myRiderStatus === 'dropped_off' || !isUpcoming) && myPaymentStatus !== 'confirmed' && (
+                         <button 
+                            onClick={() => handlePayRide(ride._id)}
+                            disabled={myPaymentStatus === 'paid'}
+                            className={`flex-1 flex items-center justify-center py-2 rounded-lg font-semibold text-sm transition-colors ${myPaymentStatus === 'paid' ? 'bg-green-100 text-green-700 cursor-default' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                        >
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            {myPaymentStatus === 'paid' ? 'Waiting' : 'Pay Now'}
+                        </button>
+                    )}
+
+                    {/* Rating Button for Riders (If dropped off OR completed) */}
+                    {!isDriving && (myRiderStatus === 'dropped_off' || (!isUpcoming && myRiderStatus !== 'no_show')) && (
+                        <button 
+                            onClick={() => { setRatingRideId(ride._id); setRatingModalOpen(true); }}
+                            className="flex-1 flex items-center justify-center bg-yellow-100 text-yellow-700 hover:bg-yellow-200 py-2 rounded-lg font-semibold text-sm transition-colors"
+                        >
+                            <Star className="w-4 h-4 mr-2" />
+                            Rate
+                        </button>
+                    )}
+
+                    {/* Report No-Show Button */}
+                    {!isDriving && hasPassed && myRiderStatus === 'booked' && (
+                        <button 
+                            onClick={() => handleReportNoShow(ride._id)}
+                            className="flex-1 flex items-center justify-center bg-red-100 text-red-700 hover:bg-red-200 py-2 rounded-lg font-semibold text-sm transition-colors"
+                            title="Report driver did not arrive"
+                        >
+                            Report No-Show
+                        </button>
+                    )}
+                    
+                    {/* SOS Button */}
+                    {isUpcoming && (
+                        <div className="mt-2 pt-2 border-t border-red-100 w-full">
+                            <button 
+                                onClick={() => handleSOS(ride._id)}
+                                className="w-full flex items-center justify-center bg-red-600 text-white hover:bg-red-700 py-2 rounded-lg font-bold text-sm shadow-md animate-pulse"
+                            >
+                                <AlertTriangle className="w-4 h-4 mr-2" />
+                                SOS - EMERGENCY
                             </button>
-                        ) : (
-                             <button onClick={() => handleCancelBooking(ride._id)} className="w-full flex items-center justify-center text-red-500 hover:text-red-700 font-semibold text-sm transition-colors duration-200">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Cancel My Booking
-                            </button>
-                        )}
-                    </div>
-                )}
+                        </div>
+                    )}
+
+                    {/* Cancel/Edit Buttons (Only if upcoming) */}
+                    {isUpcoming && (
+                        <>
+                            {isDriving ? (
+                                <>
+                                    <button onClick={() => handleEditTime(ride._id, ride.departureTime)} className="flex-1 flex items-center justify-center bg-yellow-100 text-yellow-700 hover:bg-yellow-200 py-2 rounded-lg font-semibold text-sm transition-colors"><CalendarClock className="w-4 h-4 mr-2" />Edit</button>
+                                    <button onClick={() => handleCancelRide(ride._id)} className="flex-1 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-100 py-2 rounded-lg font-semibold text-sm transition-colors"><Trash2 className="w-4 h-4 mr-2" />Cancel</button>
+                                </>
+                            ) : (
+                                <button onClick={() => handleCancelBooking(ride._id)} className="flex-1 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-100 py-2 rounded-lg font-semibold text-sm transition-colors"><Trash2 className="w-4 h-4 mr-2" />Cancel</button>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
         );
     };
@@ -171,10 +496,44 @@ const DashboardPage = () => {
                         </p>
                     </div>
                 )}
+
+                {activeChatRide && (
+                    <ChatWindow 
+                        rideId={activeChatRide._id}
+                        rideName={`Trip to ${activeChatRide.destination.address.split(',')[0]}`}
+                        currentUser={user}
+                        onClose={() => setActiveChatRide(null)}
+                    />
+                )}
+
+                {ratingModalOpen && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[3000] p-4">
+                        <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                            <h3 className="text-lg font-bold mb-4 text-center text-gray-800">Rate Your Driver</h3>
+                            <div className="flex justify-center space-x-2 mb-6">
+                                {[1, 2, 3, 4, 5].map(star => (
+                                    <button key={star} onClick={() => setRatingValue(star)} className="focus:outline-none transform hover:scale-110 transition-transform">
+                                        <Star className={`w-8 h-8 ${star <= ratingValue ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                                    </button>
+                                ))}
+                            </div>
+                            <textarea 
+                                className="w-full border border-gray-300 rounded-lg p-3 mb-4 outline-none" 
+                                placeholder="Comments..." 
+                                rows="3" 
+                                value={ratingComment} 
+                                onChange={(e) => setRatingComment(e.target.value)} 
+                            />
+                            <div className="flex justify-end space-x-3">
+                                <button onClick={() => setRatingModalOpen(false)} className="text-gray-600 px-4 py-2 hover:bg-gray-100 rounded-lg font-medium">Cancel</button>
+                                <button onClick={submitRating} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 shadow-md">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 export default DashboardPage;
-

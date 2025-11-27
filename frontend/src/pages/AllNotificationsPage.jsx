@@ -11,7 +11,7 @@ const AllNotificationsPage = () => {
         const fetchAllNotifications = async () => {
             if (!token) return;
             try {
-                const res = await fetch('https://steer-backend.onrender.com/api/notifications', {
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();

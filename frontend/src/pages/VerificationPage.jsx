@@ -22,7 +22,7 @@ const VerificationPage = ({ setPage }) => {
         setMessage('');
 
         try {
-            const res = await fetch('https://steer-backend.onrender.com/api/users/request-verification', {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/users/request-verification`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

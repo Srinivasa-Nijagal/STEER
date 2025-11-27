@@ -36,7 +36,7 @@ const AddRidePage = ({ setPage }) => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch(`https://steer-backend.onrender.com/api/rides/add`, {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/rides/add`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

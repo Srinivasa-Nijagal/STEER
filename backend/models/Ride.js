@@ -11,6 +11,25 @@ const routePathSchema = new mongoose.Schema({
     coordinates: { type: [[Number]], required: true }
 });
 
+// Schema for individual rider status in a ride
+const riderStatusSchema = new mongoose.Schema({
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    status: { 
+        type: String, 
+        enum: ['booked', 'picked_up', 'dropped_off', 'no_show', 'cancelled'], 
+        default: 'booked' 
+    },
+    pickupTime: { type: Date },
+    dropoffTime: { type: Date },
+    bookedFare: { type: Number, default: 0 },
+    // **NEW:** Payment status tracking
+    paymentStatus: {
+        type: String,
+        enum: ['pending', 'paid', 'confirmed'],
+        default: 'pending'
+    }
+});
+
 const rideSchema = new mongoose.Schema({
     driver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     origin: { type: pointSchema, required: true },
@@ -19,12 +38,17 @@ const rideSchema = new mongoose.Schema({
     totalSeats: { type: Number, required: true },
     availableSeats: { type: Number, required: true },
     fare: { type: Number, required: true },
-    riders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    riders: [riderStatusSchema], 
     routePath: { type: routePathSchema, required: true }, 
     distance: { type: Number, required: true },
     maxDetourDistance: { type: Number, required: true },
     vehicleType: { type: String, enum: ['Car', '2-Wheeler'], required: true },
     vehicleNumber: { type: String, required: true },
+    status: {
+        type: String,
+        enum: ['scheduled', 'started', 'completed', 'cancelled'],
+        default: 'scheduled'
+    }
 }, { timestamps: true });
 
 const Ride = mongoose.model('Ride', rideSchema);

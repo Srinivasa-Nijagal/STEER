@@ -26,7 +26,7 @@ const AdminDashboardPage = () => {
         }
 
         try {
-            const res = await fetch(`https://steer-backend.onrender.com/api/admin/${endpoint}`, {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/${endpoint}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -53,7 +53,7 @@ const AdminDashboardPage = () => {
         const endpoint = action === 'approve' ? 'verify-user' : 'reject-user';
 
         try {
-            const res = await fetch(`https://steer-backend.onrender.com/api/admin/${endpoint}/${userId}`, {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/${endpoint}/${userId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

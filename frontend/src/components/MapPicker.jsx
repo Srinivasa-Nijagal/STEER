@@ -77,7 +77,7 @@ const MapPicker = ({ onLocationSelect, startPoint, endPoint, onRouteCalculated, 
             debounceTimeout.current = setTimeout(() => {
                 const fetchRoute = async () => {
                     try {
-                        const response = await fetch('https://steer-backend.onrender.com/api/proxy/route', {
+                        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/proxy/route`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

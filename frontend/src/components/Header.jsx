@@ -11,7 +11,7 @@ const Header = ({ setPage }) => {
     const fetchNotifications = useCallback(async () => {
         if (!token) return;
         try {
-            const res = await fetch('https://steer-backend.onrender.com/api/notifications', {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -26,7 +26,7 @@ const Header = ({ setPage }) => {
     useEffect(() => {
         if (isAuthenticated) {
             fetchNotifications();
-            const interval = setInterval(fetchNotifications, 30000);
+            const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
             return () => clearInterval(interval);
         }
     }, [isAuthenticated, fetchNotifications]);
@@ -34,11 +34,11 @@ const Header = ({ setPage }) => {
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
     const handleBellClick = async () => {
-        setIsMenuOpen(false);
+        setIsMenuOpen(false); // Close mobile menu if open
         setShowNotifications(prev => !prev);
         if (unreadCount > 0) {
             try {
-                 await fetch('https://steer-backend.onrender.com/api/notifications/read', {
+                 await fetch(`${process.env.REACT_APP_API_URL}/api/notifications/read`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -54,7 +54,7 @@ const Header = ({ setPage }) => {
     const handleClearAll = async () => {
         if (!window.confirm("Are you sure you want to clear all your notifications?")) return;
         try {
-            const res = await fetch('https://steer-backend.onrender.com/api/notifications/clear-all', {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/notifications/clear-all`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -81,8 +81,7 @@ const Header = ({ setPage }) => {
     };
 
     return (
-        // **FIX:** Increased z-index to ensure the header is always on top of the map.
-        <header className="bg-white shadow-md sticky top-0 z-[1000]">
+        <header className="bg-white shadow-md sticky top-0 z-50">
             <div className="container mx-auto px-6 py-3">
                 <div className="flex justify-between items-center">
                     <div onClick={() => handleNav('home')} className="cursor-pointer">
@@ -105,7 +104,7 @@ const Header = ({ setPage }) => {
                                         )}
                                     </button>
                                     {showNotifications && (
-                                        <div className="absolute right-0 mt-2 w-80 max-w-[95vw] bg-white rounded-lg shadow-xl border overflow-hidden">
+                                        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border overflow-hidden">
                                             <div className="p-3 flex justify-between items-center border-b">
                                                 <span className="font-semibold text-gray-700">Notifications</span>
                                                 {notifications.length > 0 && (
@@ -172,19 +171,20 @@ const Header = ({ setPage }) => {
                                   {unreadCount > 0 && <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">{unreadCount}</span>}
                                </button>
                                {showNotifications && (
-                                <div className="absolute right-0 mt-2 w-80 max-w-[95vw] bg-white rounded-lg shadow-xl border overflow-hidden">
-                                    <div className="p-3 flex justify-between items-center border-b">
+                                // **FIX:** Used fixed positioning for mobile to center the dropdown on screen
+                                <div className="fixed top-16 left-4 right-4 z-50 bg-white rounded-lg shadow-xl border overflow-hidden max-h-[80vh] flex flex-col md:absolute md:top-auto md:left-auto md:right-0 md:w-80 md:max-h-96">
+                                    <div className="p-3 flex justify-between items-center border-b bg-gray-50">
                                         <span className="font-semibold text-gray-700">Notifications</span>
                                         {notifications.length > 0 && (
-                                            <button onClick={handleClearAll} className="text-xs text-red-500 hover:text-red-700 flex items-center">
+                                            <button onClick={handleClearAll} className="text-xs text-red-500 hover:text-red-700 flex items-center font-medium">
                                                 <Trash className="w-3 h-3 mr-1" /> Clear All
                                             </button>
                                         )}
                                     </div>
-                                    <ul className="max-h-96 overflow-y-auto">
+                                    <ul className="overflow-y-auto flex-1">
                                         {notifications.length > 0 ? (
                                             notifications.slice(0, 4).map(n => (
-                                                <li key={n._id} className="border-b p-3 text-sm text-gray-600">
+                                                <li key={n._id} className="border-b p-3 text-sm text-gray-600 hover:bg-gray-50">
                                                     {n.message}
                                                     <div className="text-xs text-gray-400 mt-1">
                                                         {new Date(n.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -192,16 +192,16 @@ const Header = ({ setPage }) => {
                                                 </li>
                                             ))
                                         ) : (
-                                            <li className="p-4 text-center text-gray-500">You have no notifications.</li>
+                                            <li className="p-6 text-center text-gray-500 italic">You have no notifications.</li>
                                         )}
                                     </ul>
-                                    <div className="p-2 bg-gray-50 text-center border-t">
+                                    <div className="p-3 bg-gray-50 text-center border-t">
                                         <button 
                                             onClick={() => {
                                                 handleNav('all-notifications');
                                                 setShowNotifications(false);
                                             }} 
-                                            className="text-sm font-semibold text-blue-600 hover:underline"
+                                            className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline"
                                         >
                                             View All Notifications
                                         </button>
@@ -223,7 +223,9 @@ const Header = ({ setPage }) => {
                              {isAuthenticated ? (
                                 <>
                                     {user && user.isAdmin && (
-                                        <button onClick={() => handleNav('admin-dashboard')} className="text-left font-semibold p-2 rounded hover:bg-gray-100">Admin Dashboard</button>
+                                        <button onClick={() => handleNav('admin-dashboard')} className="text-left font-semibold p-2 rounded hover:bg-gray-100 flex items-center">
+                                            <UserCog className="w-5 h-5 mr-2 text-blue-600"/> Admin Dashboard
+                                        </button>
                                     )}
                                     <button onClick={() => handleNav('dashboard')} className="text-left font-semibold p-2 rounded hover:bg-gray-100">My Dashboard</button>
                                     <button onClick={() => handleNav('search-ride')} className="text-left font-semibold p-2 rounded hover:bg-gray-100">Find a Ride</button>
@@ -245,4 +247,3 @@ const Header = ({ setPage }) => {
 };
 
 export default Header;
-
